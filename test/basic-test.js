@@ -1,3 +1,4 @@
+var DatArchive = require('node-dat-archive');
 var tap = require("tap"),
     test = tap.test,
     plan = tap.plan,
@@ -89,4 +90,46 @@ test("attempt to run echoString service", function (t) {
     if(err) throw err;
   });
 });
+
+
+
+test("attempt to run dat network service", async function (t) {
+  // // load an existing archive from the URL:
+  var datURL = 'dat://appler-saurshaz.hashbase.io'; // a dat P2P site URL
+  var archive = new DatArchive(datURL);
+  var datString = await archive.readFile('/js/dat.js');
+
+  var input = new Readable;
+  var output = Writable();
+
+  output._write = function (chunk, enc, next) {
+    t.equal(chunk.toString(), JSON.stringify({"a":"b"}));
+    next();
+  };
+
+  output.on('error', function(err){
+    console.log('err', err)
+  });
+  
+  output.on('finish', function end () {
+    t.end();
+  });
+
+  rs({ 
+    service: datString,
+    env: { 
+      params: JSON.stringify({"a":"b"}),
+      req: input,
+      res: output
+    },
+    vm: {
+      require: require,
+      console: console
+    },
+   })(function(err){
+    if(err) throw err;
+  });
+});
+
+
 
